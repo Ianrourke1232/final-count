@@ -1,152 +1,140 @@
-// Elements
-const player = document.getElementById('player');
-const scoreDisplay = document.getElementById('score');
-const gameOverDisplay = document.getElementById('game-over');
-const restartBtn = document.getElementById('restart-btn');
-const gameArea = document.getElementById('game-area');
-const rulesDisplay = document.getElementById('rules');
-const startBtn = document.getElementById('start-btn');
-const tokcoinDisplay = document.getElementById('tokcoin');
+document.addEventListener("DOMContentLoaded", function() {
+    const pointsElement = document.getElementById("points");
+    let points = 200;
+    const redeemCode = { // Redeem codes object with multiple codes and their respective point values
+        "BONUS100": 50,
+        "quantumsync": 100,
+        "dev": 10000
+    };
 
-// Variables
-let score = 0;
-let playerPosition = 125; // Initial player position
-let tokcoins = 5; // Starting TokCoins
-const playerWidth = 50;
-const gameAreaWidth = 300;
-const gameAreaHeight = 500;
-const itemWidth = 30;
-let gameInterval;
-let isGameOver = false;
-let items = []; // Array to store falling items
-let spawnRate = 1000; // Start with 1 second between items
-let speedIncreaseThresholds = [100, 1000, 2000]; // Thresholds for speed increase
-
-// Start Game
-function startGame() {
-    if (tokcoins <= 0) {
-        alert("You don't have any TokCoins left! You cannot play.");
-        return;
+    // Load stored points and check if daily reward has been claimed today
+    const storedPoints = localStorage.getItem("points");
+    if (storedPoints) {
+        points = parseInt(storedPoints);
+        pointsElement.textContent = `Points: ${points}`;
     }
 
-    tokcoins--; // Deduct 1 TokCoin each time the game starts
-    tokcoinDisplay.textContent = `TokCoins: ${tokcoins}`;
+    const lastClaimDate = localStorage.getItem("lastClaimDate");
+    const today = new Date().toDateString();
 
-    score = 0;
-    playerPosition = 125;
-    isGameOver = false;
-    items = [];
-    scoreDisplay.textContent = `Score: ${score}`;
-    gameOverDisplay.style.display = 'none';
-    player.style.left = `${playerPosition}px`;
+    // Disable the daily reward button if the user has already claimed today
+    if (lastClaimDate === today) {
+        document.getElementById("claim-reward").disabled = true;
+        document.getElementById("claim-reward").textContent = "Reward Claimed Today";
+    }
 
-    gameInterval = setInterval(spawnItem, spawnRate); // Spawn items every 1 second initially
-    rulesDisplay.style.display = 'none'; // Hide rules when game starts
-}
-
-// End Game
-function endGame(message) {
-    clearInterval(gameInterval);
-    items.forEach((item) => {
-        if (gameArea.contains(item)) {
-            gameArea.removeChild(item);
+    // Spin button functionality
+    document.getElementById("spin-button").addEventListener("click", function() {
+        if (points >= 10) {
+            points -= 10; // Deduct points for spinning
+            pointsElement.textContent = `Points: ${points}`;
+            spinSlots();
+        } else {
+            showNotification("Not enough points to spin!");
         }
     });
-    items = []; // Clear all items
-    isGameOver = true;
-    gameOverDisplay.style.display = 'block';
-}
 
-// Restart Game
-restartBtn.addEventListener('click', () => {
-    startGame();
-});
-
-// Start Button Click (from Rules Display)
-startBtn.addEventListener('click', () => {
-    startGame();
-});
-
-// Spawn an Item
-function spawnItem() {
-    if (isGameOver) return;
-
-    const item = document.createElement('div');
-    const isBadItem = Math.random() < 0.2; // 20% chance of spawning a bad item
-    const isSpecialBadItem = Math.random() < 0.1; // 10% chance of spawning a new, harder bad item
-
-    item.classList.add('item');
-    item.style.left = `${Math.random() * (gameAreaWidth - itemWidth)}px`;
-    item.style.top = '0px';
-    item.style.backgroundColor = isBadItem ? (isSpecialBadItem ? 'black' : 'gray') : 'gold'; // Black is a harder bad item
-    item.dataset.bad = isBadItem; // Flag bad items
-    gameArea.appendChild(item);
-    items.push(item);
-
-    moveItem(item);
-
-    // Increase the speed as the score increases
-    if (score >= speedIncreaseThresholds[0]) {
-        spawnRate = 800; // Increase speed when score reaches 100
-    }
-    if (score >= speedIncreaseThresholds[1]) {
-        spawnRate = 600; // Increase speed when score reaches 1000
-    }
-    if (score >= speedIncreaseThresholds[2]) {
-        spawnRate = 400; // Increase speed when score reaches 2000
-    }
-    clearInterval(gameInterval);
-    gameInterval = setInterval(spawnItem, spawnRate); // Restart interval with new spawn rate
-}
-
-// Move Item
-function moveItem(item) {
-    const itemInterval = setInterval(() => {
-        if (isGameOver) {
-            clearInterval(itemInterval);
-            return;
+    // Redeem code functionality
+    document.getElementById("redeem-button").addEventListener("click", function() {
+        const enteredCode = document.getElementById("redeem-code").value.trim().toLowerCase();
+        
+        // Check if the code has already been redeemed
+        const redeemedCodes = JSON.parse(localStorage.getItem("redeemedCodes")) || [];
+        if (redeemedCodes.includes(enteredCode)) {
+            showNotification("You have already redeemed this code!");
+            return; // Prevent redemption if the code was already used
         }
 
-        const itemTop = parseInt(window.getComputedStyle(item).top) || 0;
-        const itemLeft = parseInt(window.getComputedStyle(item).left);
+        // Check if the entered code exists in the redeemCode object
+        if (redeemCode[enteredCode]) {
+            points += redeemCode[enteredCode]; // Add the points for the redeem code
+            pointsElement.textContent = `Points: ${points}`;
+            showNotification(`${enteredCode} code redeemed! You received ${redeemCode[enteredCode]} points.`);
 
-        // If the item reaches the bottom of the game area
-        if (itemTop >= gameAreaHeight - 50) {
-            // Check collision with player
-            if (itemLeft > playerPosition && itemLeft < playerPosition + playerWidth) {
-                if (item.dataset.bad === 'true') {
-                    // Player collected a bad item
-                    clearInterval(itemInterval);
-                    gameArea.removeChild(item);
-                    endGame('You caught a bad item!');
-                } else {
-                    // Player collected a gift
-                    score++;
-                    scoreDisplay.textContent = `Score: ${score}`;
-                    clearInterval(itemInterval);
-                    gameArea.removeChild(item);
-                }
-            } else {
-                clearInterval(itemInterval);
-                gameArea.removeChild(item);
-            }
+            // Save the redeemed code to localStorage to prevent future redemption
+            redeemedCodes.push(enteredCode);
+            localStorage.setItem("redeemedCodes", JSON.stringify(redeemedCodes));
+            localStorage.setItem("points", points);
         } else {
-            item.style.top = `${itemTop + 5}px`;
+            showNotification("Invalid redeem code!");
         }
-    }, 50); // Move items every 50ms
-}
+    });
 
-// Player Movement
-document.addEventListener('keydown', (e) => {
-    if (isGameOver) return;
+    // Claim daily reward functionality
+    document.getElementById("claim-reward").addEventListener("click", function() {
+        if (lastClaimDate === today) {
+            showNotification("You've already claimed your daily reward today!");
+        } else {
+            points += 50; // Daily reward points
+            pointsElement.textContent = `Points: ${points}`;
+            showNotification("Daily reward claimed! You received 50 points.");
+            localStorage.setItem("lastClaimDate", today); // Save today's date to prevent spamming
+            localStorage.setItem("points", points);
 
-    if (e.key === 'ArrowLeft' && playerPosition > 0) {
-        playerPosition -= 10;
-        player.style.left = `${playerPosition}px`;
+            // Disable the button after claiming the reward
+            document.getElementById("claim-reward").disabled = true;
+            document.getElementById("claim-reward").textContent = "Reward Claimed Today";
+        }
+    });
+
+    // Patch notes button functionality
+    document.getElementById("patch-notes-button").addEventListener("click", function() {
+        document.getElementById("patch-notes-modal").style.display = "block";
+    });
+
+    // Close patch notes modal
+    document.getElementById("close-patch-notes").addEventListener("click", function() {
+        document.getElementById("patch-notes-modal").style.display = "none";
+    });
+
+    // Game rules button functionality
+    document.getElementById("rules-button").addEventListener("click", function() {
+        document.getElementById("rules-modal").style.display = "block";
+    });
+
+    // Start game from rules modal
+    document.getElementById("start-game").addEventListener("click", function() {
+        document.getElementById("rules-modal").style.display = "none";
+    });
+
+    // Spin slots logic (this can be modified for random results)
+    function spinSlots() {
+        const slotSymbols = ["🍇", "🍒", "🍋", "🍉", "🍊"];
+        const slot1 = slotSymbols[Math.floor(Math.random() * slotSymbols.length)];
+        const slot2 = slotSymbols[Math.floor(Math.random() * slotSymbols.length)];
+        const slot3 = slotSymbols[Math.floor(Math.random() * slotSymbols.length)];
+
+        document.getElementById("slot1").textContent = slot1;
+        document.getElementById("slot2").textContent = slot2;
+        document.getElementById("slot3").textContent = slot3;
+
+        checkWin(slot1, slot2, slot3);
     }
-    if (e.key === 'ArrowRight' && playerPosition < gameAreaWidth - playerWidth) {
-        playerPosition += 10;
-        player.style.left = `${playerPosition}px`;
+
+    // Check if the player won
+    function checkWin(slot1, slot2, slot3) {
+        if (slot1 === slot2 && slot2 === slot3) {
+            points += 100; // Jackpot!
+            pointsElement.textContent = `Points: ${points}`;
+            showNotification("Jackpot! You win 100 points!");
+        } else if (slot1 === slot2 || slot2 === slot3 || slot1 === slot3) {
+            points += 20; // Small win
+            pointsElement.textContent = `Points: ${points}`;
+            showNotification("Small win! You win 20 points.");
+        } else {
+            showNotification("No match, try again!");
+        }
+        localStorage.setItem("points", points);
+    }
+
+    // Show notification pop-up
+    function showNotification(message) {
+        const notification = document.getElementById("notification");
+        notification.textContent = message;
+        notification.style.display = "block";
+        setTimeout(function() {
+            notification.style.display = "none";
+        }, 3000);
     }
 });
 
