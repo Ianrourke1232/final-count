@@ -3,39 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Christmas Catch Game</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Lucky Spin Adventure</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>🎄 Christmas Catch Game 🎄</h1>
+    <div class="game-container">
+        <h1>Lucky Spin Adventure</h1>
+        
+        <div class="slot-machine">
+            <div class="slot">🍇</div>
+            <div class="slot">🍉</div>
+            <div class="slot">🍒</div>
+        </div>
 
-    <!-- Game Area -->
-    <div id="game-area">
-        <div id="player"></div>
-    </div>
+        <div class="info">
+            <p id="spins-left">Spins Left: 20</p>
+            <p id="points">Points: 0</p>
+        </div>
 
-    <!-- Score Display -->
-    <div id="score">Score: 0</div>
+        <div class="controls">
+            <button id="spin-button">Spin</button>
+            <button id="auto-spin-button">Auto Spin</button>
+            <button id="redeem-button">Redeem Code</button>
+            <input type="text" id="redeem-code" placeholder="Enter Code">
+            <button id="claim-reward">Claim Daily Reward</button>
+            <button id="buy-spin">Buy Spins</button>
+            <button id="post-score-button" style="display:none;">Post Score</button>
+        </div>
 
-    <!-- TokCoin Display -->
-    <div id="tokcoin">TokCoins: 5</div>
-
-    <!-- Game Over Display -->
-    <div id="game-over" style="display: none;">
-        <p>Game Over! 🎅 You caught a bad item!</p>
-        <button id="restart-btn">Restart</button>
-    </div>
-
-    <!-- Rules Display -->
-    <div id="rules">
-        <h2>🎄 Christmas Catch Game Rules 🎄</h2>
-        <ul>
-            <li>Use the left and right arrow keys to move your character.</li>
-            <li>Catch the gifts (gold items) to score points.</li>
-            <li>Don't catch the bad items (gray, black items), or you will lose the game.</li>
-            <li>The game ends if you catch a bad item!</li>
-        </ul>
-        <button id="start-btn">Start Game</button>
+        <div id="notification"></div>
     </div>
 
     <script src="script.js"></script>
